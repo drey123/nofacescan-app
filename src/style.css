@@ -41,6 +41,7 @@ body {
 }
 
 #canvas,
+#image-background,
 #image-preview {
   position: absolute;
   inset: 0;
@@ -50,6 +51,17 @@ body {
 
 #canvas {
   display: block;
+  z-index: 1;
+}
+
+#image-background {
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  transform: scale(1.08);
+  filter: blur(24px) brightness(0.82);
+  pointer-events: none;
+  user-select: none;
 }
 
 #image-preview {
@@ -60,9 +72,11 @@ body {
   -webkit-user-drag: none;
   transform-origin: center center;
   will-change: transform;
+  z-index: 1;
 }
 
 #canvas[hidden],
+#image-background[hidden],
 #image-preview[hidden] {
   display: none;
 }
@@ -123,6 +137,11 @@ body {
 
 #menu-button:active {
   transform: translateY(-50%) scale(0.95);
+}
+
+#navbar.editor-active #menu-button {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 #app-menu {
