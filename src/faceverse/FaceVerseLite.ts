@@ -48,10 +48,10 @@ async function loadGeometry(): Promise<GeometryAsset> {
   if (magic !== 'SCANNYFV') throw new Error('Invalid Scanny FaceVerse geometry asset');
   const headerBytes = view.getUint32(8, true);
   const meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 12, headerBytes))) as GeometryMeta;
-  const mean = decodeHalf(buffer, meta.arrays.mean.offset, meta.arrays.mean.length);
-  const identity = decodeHalf(buffer, meta.arrays.identity.offset, meta.arrays.identity.length);
-  const expression = decodeHalf(buffer, meta.arrays.expression.offset, meta.arrays.expression.length);
-  const triBytes = new Uint8Array(buffer, meta.arrays.triangles.offset, meta.arrays.triangles.length);
+  const mean = decodeHalf(buffer, meta.arrays.mean!.offset, meta.arrays.mean!.length);
+  const identity = decodeHalf(buffer, meta.arrays.identity!.offset, meta.arrays.identity!.length);
+  const expression = decodeHalf(buffer, meta.arrays.expression!.offset, meta.arrays.expression!.length);
+  const triBytes = new Uint8Array(buffer, meta.arrays.triangles!.offset, meta.arrays.triangles!.length);
   const triangles = new Uint32Array(triBytes.buffer, triBytes.byteOffset, triBytes.byteLength / 4);
   return { meta, mean, identity, expression, triangles };
 }
@@ -115,14 +115,14 @@ function buildVertices(asset: GeometryAsset, coeffs: Float32Array): Float32Array
     vertices[out + 2] = asset.mean[out + 2]!;
     for (let d = 0; d < idDims; d++) {
       const c = coeffs[d] ?? 0;
-      const base = (v * 3 + 0) * idDims + d;
+      const base = v * 3 * idDims + d;
       vertices[out] += asset.identity[base]! * c;
       vertices[out + 1] += asset.identity[base + idDims]! * c;
       vertices[out + 2] += asset.identity[base + idDims * 2]! * c;
     }
     for (let d = 0; d < expDims; d++) {
       const c = coeffs[156 + d] ?? 0;
-      const base = (v * 3 + 0) * expDims + d;
+      const base = v * 3 * expDims + d;
       vertices[out] += asset.expression[base]! * c;
       vertices[out + 1] += asset.expression[base + expDims]! * c;
       vertices[out + 2] += asset.expression[base + expDims * 2]! * c;
@@ -202,9 +202,9 @@ export async function createFaceVerseMesh(image: HTMLImageElement, bbox?: [numbe
 
   const update = (yaw: number, pitch: number, mouth: number, leftEye: number, rightEye: number) => {
     const coeffs = new Float32Array(baseCoeffs);
-    coeffs[156 + 49] = baseCoeffs[156 + 49] + (mouth - 0.5) * 0.8;
-    coeffs[156 + 14] = baseCoeffs[156 + 14] + (leftEye - 0.5) * 0.5;
-    coeffs[156 + 15] = baseCoeffs[156 + 15] + (rightEye - 0.5) * 0.5;
+    coeffs[205]! = baseCoeffs[205]! + (mouth - 0.5) * 0.8;
+    coeffs[170]! = baseCoeffs[170]! + (leftEye - 0.5) * 0.5;
+    coeffs[171]! = baseCoeffs[171]! + (rightEye - 0.5) * 0.5;
     const next = normalizeVertices(buildVertices(geometry, coeffs));
     positionAttribute.array.set(next);
     positionAttribute.needsUpdate = true;
