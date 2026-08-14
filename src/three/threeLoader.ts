@@ -14,6 +14,10 @@ export let headBone: three.Bone|null = null;
 export let leftEyeBone: three.Bone|null = null;
 export let rightEyeBone: three.Bone|null = null;
 
+let modelRoot: three.Object3D|null = null;
+let imageFace: three.Mesh|null = null;
+let imageFaceTexture: three.Texture|null = null;
+
 export function initThree() {
   scene = new three.Scene();
   camera = new three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -57,14 +61,12 @@ export function loadScene() {
   light3.position.set(-1, 0, 3);
   scene.add(light3);
 
-  cube = new three.Mesh(
-    new three.BoxGeometry(),
-    new three.MeshStandardMaterial({ color: 0xff0000 })
-  );
+  cube = new three.Mesh(new three.BoxGeometry(), new three.MeshStandardMaterial({ color: 0xff0000 }));
 
   const loader = new GLTFLoader();
   const modelUrl = `${import.meta.env.BASE_URL}assets/model.glb`;
   loader.load(modelUrl, (gltf) => {
+    modelRoot = gltf.scene;
     scene!.add(gltf.scene);
     gltf.scene.traverse(obj => {
       if ((obj as any).isMesh) {
@@ -83,6 +85,69 @@ export function loadScene() {
     });
     updateModel();
   });
+}
+
+/**
+ * Experimental image mode: turn the edited portrait into a lightweight curved
+ * face surface inside the existing Three.js renderer. This is deliberately a
+ * cheap 2.5D test, not a claim of full 3D reconstruction.
+ */
+export function setImageFace(image: HTMLImageElement) {
+  if (!scene || !camera || !renderer || !canvasHolder || !image.complete || image.naturalWidth === 0) return false;
+
+  if (modelRoot) modelRoot.visible = false;
+  if (imageFace) scene.remove(imageFace);
+  imageFaceTexture?.dispose();
+
+  imageFaceTexture = new three.Texture(image);
+  imageFaceTexture.needsUpdate = true;
+  imageFaceTexture.colorSpace = three.SRGBColorSpace;
+
+  const aspect = image.naturalWidth / image.naturalHeight;
+  const height = 0.46;
+  const width = height * aspect;
+  const geometry = new three.PlaneGeometry(width, height, 64, 64);
+  const positions = geometry.attributes.position;
+  const uvs = geometry.attributes.uv;
+
+  // Give the portrait a shallow facial dome. The center projects forward and
+  // the cheeks/edges fall back. This creates the first testable 2.5D layer.
+  for (let i = 0; i < positions.count; i++) {
+    const u = uvs.getX(i);
+    const v = uvs.getY(i);
+    const dx = (u - 0.5) * 2;
+    const dy = (v - 0.5) * 2;
+    const radius = Math.sqrt(dx * dx + dy * dy);
+    const dome = Math.max(0, 1 - Math.min(1, radius)) ** 2;
+    positions.setZ(i, dome * 0.075);
+  }
+  positions.needsUpdate = true;
+  geometry.computeVertexNormals();
+
+  imageFace = new three.Mesh(geometry, new three.MeshStandardMaterial({
+    map: imageFaceTexture,
+    transparent: false,
+    roughness: 0.92,
+    metalness: 0
+  }));
+  imageFace.position.set(0, -0.01, 0.03);
+  scene.add(imageFace);
+  updateModel();
+  return true;
+}
+
+export function clearImageFace() {
+  if (!scene) return;
+  if (imageFace) {
+    scene.remove(imageFace);
+    imageFace.geometry.dispose();
+    if (imageFace.material instanceof three.Material) imageFace.material.dispose();
+    imageFace = null;
+  }
+  imageFaceTexture?.dispose();
+  imageFaceTexture = null;
+  if (modelRoot) modelRoot.visible = true;
+  renderFrame();
 }
 
 function renderFrame() {
@@ -136,5 +201,14 @@ export function updateModel(doRender = true) {
     rightEyeBone.rotation.x = -0.5 * (directionalPad?.pitch ?? 0);
     rightEyeBone.rotation.y = -0.5 * (directionalPad?.yaw ?? 0);
   }
+
+  if (imageFace) {
+    imageFace.rotation.order = "YXZ";
+    imageFace.rotation.x = 0.5 * (directionalPad?.pitch ?? 0);
+    imageFace.rotation.y = 0.5 * (directionalPad?.yaw ?? 0);
+    const zoom = 1 + 0.35 * Math.max(-1, Math.min(1, directionalPad?.pitch ?? 0));
+    imageFace.scale.setScalar(zoom);
+  }
+
   if (doRender) renderFrame();
 }
