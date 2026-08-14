@@ -123,7 +123,7 @@ function initNavigation() {
 
       const targetFaceHeight = Math.min(height * 0.38, width * 0.68);
       const targetX = width / 2;
-      const targetY = height * 0.43;
+      const targetY = height * 0.40;
       const scale = Math.min(2.5, Math.max(0.65, targetFaceHeight / faceHeight));
 
       transform.scale = scale;
