@@ -138,6 +138,18 @@ body {
   height: 1.15rem;
 }
 
+#menu-button .close-icon {
+  display: none;
+}
+
+#navbar.editor-active #menu-button .menu-icon {
+  display: none;
+}
+
+#navbar.editor-active #menu-button .close-icon {
+  display: block;
+}
+
 #menu-button:active {
   transform: translateY(-50%) scale(0.95);
 }
