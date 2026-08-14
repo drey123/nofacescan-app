@@ -52,8 +52,6 @@ function initNavigation() {
     menuButton.setAttribute('aria-expanded', String(open));
   };
 
-  // Keep menu availability derived from one source of truth. New actions can be
-  // added here later without scattering mode checks throughout the handlers.
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
     canvas.hidden = usingImage;
@@ -137,22 +135,32 @@ function initNavigation() {
   };
 
   menuButton.addEventListener('click', (event) => {
+    event.preventDefault();
     event.stopPropagation();
     setMenuOpen(menu.hidden);
   });
 
-  imageUploadMenuItem.addEventListener('click', () => {
+  // Keep menu interactions inside the menu so the outside-click handler cannot
+  // interfere with touch/click activation on mobile browsers.
+  menu.addEventListener('click', (event) => event.stopPropagation());
+
+  imageUploadMenuItem.addEventListener('click', (event) => {
+    event.preventDefault();
     setMenuOpen(false);
     imageUpload.click();
   });
 
-  threeModelMenuItem.addEventListener('click', () => {
+  threeModelMenuItem.addEventListener('click', (event) => {
+    event.preventDefault();
     setEditorOpen(false);
     setSource('3d');
     setMenuOpen(false);
   });
 
-  adjustImageMenuItem.addEventListener('click', () => setEditorOpen(true));
+  adjustImageMenuItem.addEventListener('click', (event) => {
+    event.preventDefault();
+    setEditorOpen(true);
+  });
 
   imageUpload.addEventListener('change', () => {
     const file = imageUpload.files?.[0];
@@ -179,8 +187,15 @@ function initNavigation() {
     applyImageTransform();
   });
 
-  imageResetButton.addEventListener('click', resetImageTransform);
-  imageDoneButton.addEventListener('click', () => setEditorOpen(false));
+  imageResetButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    resetImageTransform();
+  });
+
+  imageDoneButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    setEditorOpen(false);
+  });
 
   imageEditorFrame.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
