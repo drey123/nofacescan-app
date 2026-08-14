@@ -1,11 +1,27 @@
 import './style.css';
 import './DirectionalPad.css';
 import './InteractionMenu.css';
+import { FaceDetector, FilesetResolver } from '@mediapipe/tasks-vision';
 import { initInputs } from './Interface/InteractionMenu';
 import { initScaling } from './scaling';
 import { initThree } from './three/threeLoader';
 
 type ImageTransform = { x: number; y: number; scale: number };
+
+const FACE_DETECTOR_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+const FACE_DETECTOR_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
+
+let faceDetectorPromise: Promise<FaceDetector> | null = null;
+
+async function getFaceDetector() {
+  if (!faceDetectorPromise) {
+    faceDetectorPromise = (async () => {
+      const vision = await FilesetResolver.forVisionTasks(FACE_DETECTOR_WASM);
+      return FaceDetector.createFromModelPath(vision, FACE_DETECTOR_MODEL);
+    })();
+  }
+  return faceDetectorPromise;
+}
 
 function initNavigation() {
   const menuButton = document.getElementById('menu-button') as HTMLButtonElement | null;
@@ -21,8 +37,9 @@ function initNavigation() {
   const imageResetButton = document.getElementById('image-reset-button') as HTMLButtonElement | null;
   const imageDoneButton = document.getElementById('image-done-button') as HTMLButtonElement | null;
   const imageEditorFrame = document.getElementById('image-editor-frame') as HTMLDivElement | null;
+  const imageEditorHint = document.getElementById('image-editor-hint') as HTMLDivElement | null;
 
-  if (!menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame) return;
+  if (!menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
 
   let imageObjectUrl: string | null = null;
   let transform: ImageTransform = { x: 0, y: 0, scale: 1 };
@@ -60,6 +77,48 @@ function initNavigation() {
     }
   };
 
+  const autoFitToFace = async () => {
+    try {
+      await imagePreview.decode();
+      const detector = await getFaceDetector();
+      const detections = detector.detect(imagePreview).detections;
+      if (!detections.length) {
+        imageEditorHint.textContent = 'No face detected — position it manually';
+        return;
+      }
+
+      const detection = [...detections].sort((a, b) => (b.categories[0]?.score ?? 0) - (a.categories[0]?.score ?? 0))[0];
+      const box = detection.boundingBox;
+      const width = imagePreview.clientWidth;
+      const height = imagePreview.clientHeight;
+      const naturalWidth = imagePreview.naturalWidth;
+      const naturalHeight = imagePreview.naturalHeight;
+      const coverScale = Math.max(width / naturalWidth, height / naturalHeight);
+      const renderedWidth = naturalWidth * coverScale;
+      const renderedHeight = naturalHeight * coverScale;
+      const baseLeft = (width - renderedWidth) / 2;
+      const baseTop = (height - renderedHeight) / 2;
+      const faceX = baseLeft + (box.originX + box.width / 2) * coverScale;
+      const faceY = baseTop + (box.originY + box.height / 2) * coverScale;
+      const faceHeight = box.height * coverScale;
+
+      // This is the first calibration pass. The editor guide is deliberately
+      // the same visual reference used for manual correction.
+      const targetFaceHeight = Math.min(height * 0.38, width * 0.68);
+      const targetX = width / 2;
+      const targetY = height * 0.43;
+      const scale = Math.min(2.5, Math.max(0.65, targetFaceHeight / faceHeight));
+
+      transform.scale = scale;
+      transform.x = targetX - (width / 2 + (faceX - width / 2) * scale);
+      transform.y = targetY - (height / 2 + (faceY - height / 2) * scale);
+      applyImageTransform();
+      imageEditorHint.textContent = 'Face fitted — drag or zoom to fine-tune';
+    } catch {
+      imageEditorHint.textContent = 'Auto-fit unavailable — position it manually';
+    }
+  };
+
   menuButton.addEventListener('click', (event) => {
     event.stopPropagation();
     setMenuOpen(menu.hidden);
@@ -71,6 +130,7 @@ function initNavigation() {
   });
 
   threeModelMenuItem.addEventListener('click', () => {
+    setEditorOpen(false);
     setSource('3d');
     setMenuOpen(false);
   });
@@ -85,7 +145,11 @@ function initNavigation() {
     imagePreview.src = imageObjectUrl;
     resetImageTransform();
     setSource('image');
-    requestAnimationFrame(() => setEditorOpen(true));
+    imageEditorHint.textContent = 'Finding face…';
+    requestAnimationFrame(() => {
+      setEditorOpen(true);
+      void autoFitToFace();
+    });
   });
 
   imagePreview.addEventListener('error', () => {
