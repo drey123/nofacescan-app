@@ -80,8 +80,10 @@ body {
 #image-preview[hidden],
 #image-upload-menu-item[hidden],
 #three-model-menu-item[hidden],
-#adjust-image-menu-item[hidden] {
+#adjust-image-menu-item[hidden],
+#interaction-menu[hidden] {
   display: none !important;
+  pointer-events: none !important;
 }
 
 #navbar {
@@ -235,6 +237,8 @@ body {
   inset: 0;
   overflow: hidden;
   cursor: grab;
+  touch-action: none;
+  z-index: 1;
 }
 
 #image-editor-frame:active {
