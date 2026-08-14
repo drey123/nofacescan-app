@@ -8,6 +8,7 @@ import { initThree } from './three/threeLoader';
 
 type ImageTransform = { x: number; y: number; scale: number };
 type FaceSource = '3d' | 'image';
+type EditorSnapshot = { source: FaceSource; transform: ImageTransform };
 
 const FACE_DETECTOR_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const FACE_DETECTOR_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
@@ -36,41 +37,41 @@ function initNavigation() {
   const imageBackground = document.getElementById('image-background') as HTMLImageElement | null;
   const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
   const imageEditor = document.getElementById('image-editor') as HTMLDivElement | null;
+  const interactionMenu = document.getElementById('interaction-menu') as HTMLDivElement | null;
   const imageZoom = document.getElementById('image-zoom') as HTMLInputElement | null;
   const imageResetButton = document.getElementById('image-reset-button') as HTMLButtonElement | null;
   const imageDoneButton = document.getElementById('image-done-button') as HTMLButtonElement | null;
   const imageEditorFrame = document.getElementById('image-editor-frame') as HTMLDivElement | null;
   const imageEditorHint = document.getElementById('image-editor-hint') as HTMLDivElement | null;
 
-  if (!navbar || !menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imageBackground || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
+  if (!navbar || !menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imageBackground || !imagePreview || !imageEditor || !interactionMenu || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
 
   let imageObjectUrl: string | null = null;
   let activeSource: FaceSource = '3d';
   let transform: ImageTransform = { x: 0, y: 0, scale: 1 };
   let dragStart: { pointerId: number; x: number; y: number; startX: number; startY: number } | null = null;
+  let editorSnapshot: EditorSnapshot | null = null;
+  let editorResetTransform: ImageTransform = { x: 0, y: 0, scale: 1 };
 
   const setMenuOpen = (open: boolean) => {
     menu.hidden = !open;
     menuButton.setAttribute('aria-expanded', String(open));
   };
 
+  const copyTransform = (value: ImageTransform): ImageTransform => ({ ...value });
+
   // One source state controls every source-specific UI element.
   // 3D: exactly one menu action. Image: exactly two menu actions.
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
 
-    // Keep the Three.js canvas mounted so the existing controller/rendering
-    // architecture is never disrupted. Only its visibility changes.
     canvas.style.visibility = usingImage ? 'hidden' : 'visible';
     imageBackground.hidden = !usingImage;
     imagePreview.hidden = !usingImage;
 
     imageUploadMenuItem.hidden = usingImage;
-    imageUploadMenuItem.setAttribute('aria-hidden', String(usingImage));
     threeModelMenuItem.hidden = !usingImage;
-    threeModelMenuItem.setAttribute('aria-hidden', String(!usingImage));
     adjustImageMenuItem.hidden = !usingImage;
-    adjustImageMenuItem.setAttribute('aria-hidden', String(!usingImage));
   };
 
   const setSource = (source: FaceSource) => {
@@ -84,17 +85,38 @@ function initNavigation() {
   };
 
   const resetImageTransform = () => {
-    transform = { x: 0, y: 0, scale: 1 };
+    transform = copyTransform(editorResetTransform);
     applyImageTransform();
   };
 
-  const setEditorOpen = (open: boolean) => {
-    imageEditor.hidden = !open;
-    navbar.classList.toggle('editor-active', open);
+  const setEditorOpen = (open: boolean, snapshot?: EditorSnapshot) => {
     if (open) {
+      editorSnapshot = snapshot ?? { source: activeSource, transform: copyTransform(transform) };
+      editorResetTransform = copyTransform(transform);
       setMenuOpen(false);
+      interactionMenu.hidden = true;
+      navbar.classList.add('editor-active');
+      imageEditor.hidden = false;
       applyImageTransform();
+      return;
     }
+
+    imageEditor.hidden = true;
+    interactionMenu.hidden = false;
+    navbar.classList.remove('editor-active');
+    editorSnapshot = null;
+  };
+
+  const cancelEditor = () => {
+    if (!editorSnapshot) {
+      setEditorOpen(false);
+      return;
+    }
+
+    transform = copyTransform(editorSnapshot.transform);
+    setSource(editorSnapshot.source);
+    applyImageTransform();
+    setEditorOpen(false);
   };
 
   const autoFitToFace = async () => {
@@ -140,6 +162,7 @@ function initNavigation() {
       transform.scale = scale;
       transform.x = targetX - (width / 2 + (faceX - width / 2) * scale);
       transform.y = targetY - (height / 2 + (faceY - height / 2) * scale);
+      editorResetTransform = copyTransform(transform);
       applyImageTransform();
       imageEditorHint.textContent = 'Face fitted — drag or zoom to fine-tune';
     } catch {
@@ -150,6 +173,12 @@ function initNavigation() {
   menuButton.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
+
+    if (!imageEditor.hidden) {
+      cancelEditor();
+      return;
+    }
+
     setMenuOpen(menu.hidden);
   });
 
@@ -163,7 +192,6 @@ function initNavigation() {
 
   threeModelMenuItem.addEventListener('click', (event) => {
     event.preventDefault();
-    setEditorOpen(false);
     setSource('3d');
     setMenuOpen(false);
   });
@@ -176,22 +204,25 @@ function initNavigation() {
   imageUpload.addEventListener('change', () => {
     const file = imageUpload.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
+
+    const previousState: EditorSnapshot = { source: activeSource, transform: copyTransform(transform) };
+
     if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl);
     imageObjectUrl = URL.createObjectURL(file);
     imagePreview.src = imageObjectUrl;
     imageBackground.src = imageObjectUrl;
-    resetImageTransform();
+    transform = { x: 0, y: 0, scale: 1 };
     setSource('image');
     imageEditorHint.textContent = 'Finding face…';
+
     requestAnimationFrame(() => {
-      setEditorOpen(true);
+      setEditorOpen(true, previousState);
       void autoFitToFace();
     });
   });
 
   imagePreview.addEventListener('error', () => {
-    setEditorOpen(false);
-    setSource('3d');
+    cancelEditor();
   });
 
   imageZoom.addEventListener('input', () => {
