@@ -9,6 +9,7 @@ import { clearImageFace, initThree, setImageFace } from './three/threeLoader';
 type ImageTransform = { x: number; y: number; scale: number };
 type FaceSource = '3d' | 'image';
 type EditorSnapshot = { source: FaceSource; transform: ImageTransform };
+type FaceBox = [number, number, number, number];
 
 const FACE_DETECTOR_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const FACE_DETECTOR_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
@@ -53,6 +54,7 @@ function initNavigation() {
   let dragStart: { pointerId: number; x: number; y: number; startX: number; startY: number } | null = null;
   let editorSnapshot: EditorSnapshot | null = null;
   let editorResetTransform: ImageTransform = { x: 0, y: 0, scale: 1 };
+  let detectedFaceBox: FaceBox | null = null;
 
   const setMenuOpen = (open: boolean) => {
     menu.hidden = !open;
@@ -133,19 +135,23 @@ function initNavigation() {
       const detector = await getFaceDetector();
       const detections = detector.detect(imagePreview).detections;
       if (!detections.length) {
+        detectedFaceBox = null;
         imageEditorHint.textContent = 'No face detected — position it manually';
         return;
       }
       const detection = [...detections].sort((a, b) => (b.categories[0]?.score ?? 0) - (a.categories[0]?.score ?? 0))[0];
       if (!detection) {
+        detectedFaceBox = null;
         imageEditorHint.textContent = 'No face detected — position it manually';
         return;
       }
       const box = detection.boundingBox;
       if (!box) {
+        detectedFaceBox = null;
         imageEditorHint.textContent = 'Face location unavailable — position it manually';
         return;
       }
+      detectedFaceBox = [box.originX, box.originY, box.originX + box.width, box.originY + box.height];
       const width = imagePreview.clientWidth;
       const height = imagePreview.clientHeight;
       const naturalWidth = imagePreview.naturalWidth;
@@ -169,6 +175,7 @@ function initNavigation() {
       applyImageTransform();
       imageEditorHint.textContent = 'Face fitted — drag or zoom to fine-tune';
     } catch {
+      detectedFaceBox = null;
       imageEditorHint.textContent = 'Auto-fit unavailable — position it manually';
     }
   };
@@ -211,6 +218,7 @@ function initNavigation() {
     imagePreview.src = imageObjectUrl;
     imageBackground.src = imageObjectUrl;
     transform = { x: 0, y: 0, scale: 1 };
+    detectedFaceBox = null;
     imageRendered = false;
     setSource('image');
     imageEditorHint.textContent = 'Finding face…';
@@ -220,9 +228,7 @@ function initNavigation() {
     });
   });
 
-  imagePreview.addEventListener('error', () => {
-    cancelEditor();
-  });
+  imagePreview.addEventListener('error', () => cancelEditor());
 
   imageZoom.addEventListener('input', () => {
     transform.scale = Number(imageZoom.value);
@@ -234,17 +240,26 @@ function initNavigation() {
     resetImageTransform();
   });
 
-  imageDoneButton.addEventListener('click', (event) => {
+  imageDoneButton.addEventListener('click', async (event) => {
     event.preventDefault();
-    imageEditorHint.textContent = 'Building face…';
-    const built = setImageFace(imagePreview);
-    if (!built) {
-      imageEditorHint.textContent = 'Could not build face — try the image again';
-      return;
+    if (imageDoneButton.disabled) return;
+    imageDoneButton.disabled = true;
+    imageEditorHint.textContent = 'Building real 3D face… first run downloads the reconstruction model.';
+    try {
+      const built = await setImageFace(imagePreview, detectedFaceBox ?? undefined);
+      if (!built) {
+        imageEditorHint.textContent = 'Could not build face — try the image again';
+        return;
+      }
+      imageRendered = true;
+      setEditorOpen(false);
+      updateModeUI();
+    } catch (error) {
+      console.error(error);
+      imageEditorHint.textContent = error instanceof Error ? `3D build failed: ${error.message}` : '3D build failed — try again';
+    } finally {
+      imageDoneButton.disabled = false;
     }
-    imageRendered = true;
-    setEditorOpen(false);
-    updateModeUI();
   });
 
   imageEditorFrame.addEventListener('pointerdown', (event) => {
