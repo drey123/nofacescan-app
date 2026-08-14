@@ -14,6 +14,10 @@
     <div id="app">
       <div id="navbar">
         <img src="/logo.png" alt="">
+        <label id="image-upload-button" title="Use your own image">
+          <span>Upload image</span>
+          <input id="image-upload" type="file" accept="image/*" hidden>
+        </label>
       </div>
       <div id="canvas-holder">
         <canvas id="canvas"></canvas>
@@ -43,12 +47,6 @@
               <div class="thumb-shadow"></div>
               <input type="range" name="" min="0" max="1" step="0.001">
             </div>
-            <!--
-            <div id="grouped-eye-slider" class="slider grouped" style="--slider-index: 0; --slider-column-count: 2;">
-              <div class="thumb"></div>
-              <input type="range" name="" min="0" max="1" step="0.001">
-            </div>
-            -->
             <div id="mouth-slider" class="slider" style="--slider-index: 2;">
               <div class="track"></div>
               <div class="thumb">
