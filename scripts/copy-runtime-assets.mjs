@@ -1,4 +1,4 @@
-import { mkdir, readdir, copyFile } from 'node:fs/promises';
+import { mkdir, readdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const root = process.cwd();
@@ -24,4 +24,27 @@ await copyMatching(
   ['.wasm', '.js'],
 );
 
-console.log('Bundled ONNX Runtime and MediaPipe WASM assets into dist.');
+async function patchJs(dir) {
+  for (const name of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, name.name);
+    if (name.isDirectory()) {
+      await patchJs(path);
+      continue;
+    }
+    if (!/\.(js|mjs)$/.test(name.name)) continue;
+    let text = await readFile(path, 'utf8');
+    const before = text;
+    text = text.replace(
+      /['"]https:\/\/cdn\.jsdelivr\.net\/npm\/onnxruntime-web@1\.23\.2\/dist\/['"]/g,
+      "new URL('../onnxruntime/', import.meta.url).href",
+    );
+    text = text.replace(
+      /['"]https:\/\/cdn\.jsdelivr\.net\/npm\/@mediapipe\/tasks-vision@0\.10\.35\/wasm['"]/g,
+      "new URL('../mediapipe/wasm/', import.meta.url).href",
+    );
+    if (text !== before) await writeFile(path, text);
+  }
+}
+
+await patchJs(dist);
+console.log('Bundled ONNX Runtime + MediaPipe WASM assets and rewired the production bundle to use them locally.');
