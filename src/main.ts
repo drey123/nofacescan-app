@@ -58,12 +58,19 @@ function initNavigation() {
   // 3D: exactly one menu action. Image: exactly two menu actions.
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
-    canvas.hidden = usingImage;
+
+    // Keep the Three.js canvas mounted so the existing controller/rendering
+    // architecture is never disrupted. Only its visibility changes.
+    canvas.style.visibility = usingImage ? 'hidden' : 'visible';
     imageBackground.hidden = !usingImage;
     imagePreview.hidden = !usingImage;
+
     imageUploadMenuItem.hidden = usingImage;
+    imageUploadMenuItem.setAttribute('aria-hidden', String(usingImage));
     threeModelMenuItem.hidden = !usingImage;
+    threeModelMenuItem.setAttribute('aria-hidden', String(!usingImage));
     adjustImageMenuItem.hidden = !usingImage;
+    adjustImageMenuItem.setAttribute('aria-hidden', String(!usingImage));
   };
 
   const setSource = (source: FaceSource) => {
