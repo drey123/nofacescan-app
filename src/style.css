@@ -258,3 +258,41 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
+
+#image-reset-button,
+#image-done-button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.78rem;
+  background: var(--bg-1);
+  color: #242428;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#image-reset-button:active,
+#image-done-button:active {
+  background: var(--bg-2);
+  transform: scale(0.97);
+}
+
+.zoom-control {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  color: #55555a;
+  font-size: 0.7rem;
+}
+
+#image-zoom {
+  width: 100%;
+  accent-color: #77777d;
+}
