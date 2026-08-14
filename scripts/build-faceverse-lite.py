@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Build a browser-sized FaceVerse geometry asset from the upstream model data.
-
-We intentionally keep only the first PCA components needed for the experiment:
-- 32 identity coefficients
-- 64 expression coefficients (keeps mouth/eye controls available)
-- mean shape
-- triangle topology
-
-The heavy ResNet50 INT8 predictor is copied separately. Nothing is committed to
-Git; CI downloads the upstream MIT-licensed release asset and places only the
-runtime files in dist/public.
-"""
+"""Build a browser-sized FaceVerse geometry asset from the upstream model data."""
 from pathlib import Path
 import json
 import struct
@@ -27,6 +16,7 @@ VERSION = "v4.1.0"
 BASE = f"https://github.com/Mrkomiljon/faceverse-onnx/releases/download/{VERSION}"
 NPY = CACHE / "faceverse_v4_2.npy"
 ONNX = CACHE / "faceverse_resnet50_int8.onnx"
+HEADER_BYTES = 4096
 
 
 def download(url: str, path: Path) -> None:
@@ -34,13 +24,6 @@ def download(url: str, path: Path) -> None:
         return
     print(f"Downloading {url}")
     urllib.request.urlretrieve(url, path)
-
-
-def write_array(f, array: np.ndarray) -> tuple[int, int]:
-    raw = np.ascontiguousarray(array).tobytes()
-    offset = f.tell()
-    f.write(raw)
-    return offset, len(raw)
 
 
 def main() -> None:
@@ -59,29 +42,28 @@ def main() -> None:
         "triangleCount": int(triangles.shape[0]),
         "identityDims": 32,
         "expressionDims": 64,
-        "meanDtype": "f16",
-        "basisDtype": "f16",
-        "triDtype": "u32",
+        "headerBytes": HEADER_BYTES,
         "arrays": {}
     }
 
     out_file = OUT / "faceverse-lite.bin"
     with out_file.open("wb") as f:
         f.write(b"SCANNYFV")
-        f.write(struct.pack("<I", 0))
-        meta_offset = f.tell()
-        f.write(b" " * 4)
+        f.write(struct.pack("<I", HEADER_BYTES))
+        f.write(b" " * HEADER_BYTES)
 
         for name, array in (("mean", mean), ("identity", identity), ("expression", expression), ("triangles", triangles)):
-            offset, length = write_array(f, array)
-            meta["arrays"][name] = {"offset": offset, "length": length, "shape": list(array.shape)}
+            raw = np.ascontiguousarray(array).tobytes()
+            offset = f.tell()
+            f.write(raw)
+            meta["arrays"][name] = {"offset": offset, "length": len(raw), "shape": list(array.shape)}
 
         header = json.dumps(meta, separators=(",", ":")).encode("utf-8")
-        header_start = meta_offset + 4
-        f.seek(meta_offset)
-        f.write(struct.pack("<I", len(header)))
-        f.seek(meta_offset + 4)
+        if len(header) > HEADER_BYTES:
+            raise RuntimeError(f"metadata header is too large: {len(header)} bytes")
+        f.seek(12)
         f.write(header)
+        f.write(b" " * (HEADER_BYTES - len(header)))
 
     out_model = OUT / "faceverse_resnet50_int8.onnx"
     if not out_model.exists() or out_model.stat().st_size != ONNX.stat().st_size:
