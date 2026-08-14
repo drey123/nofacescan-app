@@ -110,23 +110,26 @@ function buildVertices(asset: GeometryAsset, coeffs: Float32Array): Float32Array
   const vertices = new Float32Array(n * 3);
   for (let v = 0; v < n; v++) {
     const out = v * 3;
-    vertices[out] = asset.mean[out]!;
-    vertices[out + 1] = asset.mean[out + 1]!;
-    vertices[out + 2] = asset.mean[out + 2]!;
+    let vx = asset.mean[out] ?? 0;
+    let vy = asset.mean[out + 1] ?? 0;
+    let vz = asset.mean[out + 2] ?? 0;
     for (let d = 0; d < idDims; d++) {
       const c = coeffs[d] ?? 0;
       const base = v * 3 * idDims + d;
-      vertices[out] += asset.identity[base]! * c;
-      vertices[out + 1] += asset.identity[base + idDims]! * c;
-      vertices[out + 2] += asset.identity[base + idDims * 2]! * c;
+      vx += (asset.identity[base] ?? 0) * c;
+      vy += (asset.identity[base + idDims] ?? 0) * c;
+      vz += (asset.identity[base + idDims * 2] ?? 0) * c;
     }
     for (let d = 0; d < expDims; d++) {
       const c = coeffs[156 + d] ?? 0;
       const base = v * 3 * expDims + d;
-      vertices[out] += asset.expression[base]! * c;
-      vertices[out + 1] += asset.expression[base + expDims]! * c;
-      vertices[out + 2] += asset.expression[base + expDims * 2]! * c;
+      vx += (asset.expression[base] ?? 0) * c;
+      vy += (asset.expression[base + expDims] ?? 0) * c;
+      vz += (asset.expression[base + expDims * 2] ?? 0) * c;
     }
+    vertices[out] = vx;
+    vertices[out + 1] = vy;
+    vertices[out + 2] = vz;
   }
   return vertices;
 }
@@ -143,9 +146,12 @@ function normalizeVertices(vertices: Float32Array): Float32Array {
   const cz = (minZ + maxZ) / 2;
   const scale = 0.46 / Math.max(maxY - minY, 0.001);
   for (let i = 0; i < vertices.length; i += 3) {
-    vertices[i] = (vertices[i]! - cx) * scale;
-    vertices[i + 1] = (vertices[i + 1]! - cy) * scale - 0.01;
-    vertices[i + 2] = (vertices[i + 2]! - cz) * scale + 0.03;
+    const x = vertices[i] ?? 0;
+    const y = vertices[i + 1] ?? 0;
+    const z = vertices[i + 2] ?? 0;
+    vertices[i] = (x - cx) * scale;
+    vertices[i + 1] = (y - cy) * scale - 0.01;
+    vertices[i + 2] = (z - cz) * scale + 0.03;
   }
   return vertices;
 }
