@@ -3,7 +3,7 @@ import * as ort from 'onnxruntime-web';
 
 const MODEL_URL = `${import.meta.env.BASE_URL}faceverse/faceverse_resnet50_int8.onnx`;
 const GEOMETRY_URL = `${import.meta.env.BASE_URL}faceverse/faceverse-lite.bin`;
-const WASM_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
+const WASM_URL = `${import.meta.env.BASE_URL}onnxruntime/`;
 
 export type FaceBuildProgress = {
   stage: 'download-model' | 'download-geometry' | 'initialize' | 'inference' | 'mesh';
@@ -126,7 +126,11 @@ async function loadRuntime(
   signal: AbortSignal,
   onProgress: (progress: FaceBuildProgress) => void,
 ) {
+  // The predictor is INT8. Start with the universal WASM CPU backend rather than
+  // allocating a second GPU execution graph on mobile devices.
   ort.env.wasm.wasmPaths = WASM_URL;
+  ort.env.wasm.numThreads = 1;
+  ort.env.wasm.proxy = false;
   onProgress({ stage: 'download-model', loaded: 0, total: 0 });
 
   const geometryPromise = loadGeometry(signal, (loaded, total) =>
@@ -140,7 +144,7 @@ async function loadRuntime(
   onProgress({ stage: 'initialize' });
 
   const session = await ort.InferenceSession.create(model, {
-    executionProviders: ['webgpu', 'wasm'],
+    executionProviders: ['wasm'],
     graphOptimizationLevel: 'all',
   });
 
