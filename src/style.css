@@ -77,8 +77,11 @@ body {
 
 #canvas[hidden],
 #image-background[hidden],
-#image-preview[hidden] {
-  display: none;
+#image-preview[hidden],
+#image-upload-menu-item[hidden],
+#three-model-menu-item[hidden],
+#adjust-image-menu-item[hidden] {
+  display: none !important;
 }
 
 #navbar {
@@ -95,7 +98,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
+  z-index: 50;
   border-radius: 0 0 1.75rem 1.75rem;
   @supports (corner-shape: squircle) {
     border-radius: 0 0 3rem 3rem;
@@ -139,11 +142,6 @@ body {
   transform: translateY(-50%) scale(0.95);
 }
 
-#navbar.editor-active #menu-button {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 #app-menu {
   position: absolute;
   top: calc(100% + 0.45rem);
@@ -154,13 +152,13 @@ body {
   box-shadow: rgba(0, 0, 0, 0.14) 0 0.7rem 2rem;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 1rem;
-  z-index: 30;
+  z-index: 51;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 #app-menu[hidden] {
-  display: none;
+  display: none !important;
 }
 
 #image-upload-menu-item,
@@ -276,6 +274,7 @@ body {
   border-radius: 1.1rem;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  z-index: 60;
 }
 
 #image-reset-button,
