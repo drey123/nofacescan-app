@@ -1,6 +1,6 @@
 import * as three from "three";
 import { directionalPad, leftEyeSlider, mouthSlider, rightEyeSlider } from "../Interface/InteractionMenu";
-import { createFaceVerseMesh, type FaceVerseController } from "../faceverse/FaceVerseLite";
+import { createFaceVerseMesh, type FaceBuildProgress, type FaceVerseController } from "../faceverse/FaceVerseLite";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
 
 export let scene: three.Scene|null = null;
@@ -14,171 +14,16 @@ export let neckBone: three.Bone|null = null;
 export let headBone: three.Bone|null = null;
 export let leftEyeBone: three.Bone|null = null;
 export let rightEyeBone: three.Bone|null = null;
-
 let modelRoot: three.Object3D|null = null;
 let reconstructedFace: three.Mesh|null = null;
 let reconstructedController: FaceVerseController|null = null;
 
-export function initThree() {
-  scene = new three.Scene();
-  camera = new three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, -0.01, 0.5);
-
-  canvasHolder = (document.getElementById("canvas-holder") ?? (() => { throw new Error("cannot get canvas holder"); })()) as HTMLDivElement;
-  canvas = (document.getElementById("canvas") ?? (() => { throw new Error("cannot get canvas"); })()) as HTMLCanvasElement;
-  renderer = new three.WebGLRenderer({ antialias: true, canvas, alpha: true });
-  renderer.setClearColor(0x000000, 0);
-
-  const resizeObserver = new ResizeObserver(() => resizeCanvas(true));
-  resizeObserver.observe(canvasHolder);
-
-  loadScene();
-  resizeCanvas();
-}
-
-export function resizeCanvas(doRender = true) {
-  if (camera == null || canvasHolder == null || renderer == null || scene == null) return;
-  const width = canvasHolder.clientWidth;
-  const height = canvasHolder.clientHeight;
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height, false);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-  if (doRender) renderFrame();
-}
-
-export function loadScene() {
-  if (camera == null || canvasHolder == null || renderer == null || scene == null) {
-    throw new Error("cannot load scene without loaded values");
-  }
-
-  const light1 = new three.DirectionalLight(0xffffff, 2);
-  light1.position.set(2, 2, 3);
-  scene.add(light1);
-  const light2 = new three.DirectionalLight(0xffffff, 1);
-  light2.position.set(-1, 3, 0);
-  scene.add(light2);
-  const light3 = new three.DirectionalLight(0xffffff, 0.5);
-  light3.position.set(-1, 0, 3);
-  scene.add(light3);
-
-  cube = new three.Mesh(new three.BoxGeometry(), new three.MeshStandardMaterial({ color: 0xff0000 }));
-
-  const loader = new GLTFLoader();
-  const modelUrl = `${import.meta.env.BASE_URL}assets/model.glb`;
-  loader.load(modelUrl, (gltf) => {
-    modelRoot = gltf.scene;
-    scene!.add(gltf.scene);
-    gltf.scene.traverse(obj => {
-      if ((obj as any).isMesh) {
-        const asMesh = obj as three.Mesh;
-        if (!asMesh.morphTargetDictionary) return;
-        faceMesh = asMesh;
-      } else if ((obj as any).isBone) {
-        const asBone = obj as three.Bone;
-        if (obj.name === "mixamorig_Neck") neckBone = asBone;
-        if (obj.name === "mixamorig_Head") headBone = asBone;
-        if (obj.name === "mixamorig_LeftEye") leftEyeBone = asBone;
-        if (obj.name === "mixamorig_RightEye") rightEyeBone = asBone;
-        if (obj.name === "mixamorig_LeftArm") asBone.rotateX(1);
-        if (obj.name === "mixamorig_RightArm") asBone.rotateX(1);
-      }
-    });
-    updateModel();
-  });
-}
-
-export async function setImageFace(image: HTMLImageElement, bbox?: [number, number, number, number]) {
-  if (!scene || !camera || !renderer || !canvasHolder || !image.complete || image.naturalWidth === 0) return false;
-
-  if (modelRoot) modelRoot.visible = false;
-  clearReconstructedFace();
-
-  const controller = await createFaceVerseMesh(image, bbox);
-  reconstructedController = controller;
-  reconstructedFace = controller.mesh;
-  scene.add(reconstructedFace);
-  updateModel();
-  return true;
-}
-
-function clearReconstructedFace() {
-  if (!scene || !reconstructedFace) {
-    reconstructedController = null;
-    return;
-  }
-  scene.remove(reconstructedFace);
-  reconstructedFace.geometry.dispose();
-  if (reconstructedFace.material instanceof three.Material) reconstructedFace.material.dispose();
-  reconstructedFace = null;
-  reconstructedController = null;
-}
-
-export function clearImageFace() {
-  clearReconstructedFace();
-  if (modelRoot) modelRoot.visible = true;
-  renderFrame();
-}
-
-function renderFrame() {
-  if (camera == null || canvasHolder == null || renderer == null || scene == null) return;
-  renderer.render(scene, camera);
-}
-
-export function updateModel(doRender = true) {
-  if (camera == null || canvasHolder == null || renderer == null || scene == null) return;
-
-  if (faceMesh) {
-    const blinkLeftIndex = faceMesh.morphTargetDictionary?.["Blink_Left"];
-    if (blinkLeftIndex !== undefined && faceMesh.morphTargetInfluences != null) {
-      faceMesh.morphTargetInfluences[blinkLeftIndex] = (rightEyeSlider?.value ?? 0) - 0.5 * Math.max(-1, Math.min(1, 2 * (directionalPad?.pitch ?? 0))) * (1 - (rightEyeSlider?.value ?? 0));
-    }
-    const blinkRightIndex = faceMesh.morphTargetDictionary?.["Blink_Right"];
-    if (blinkRightIndex !== undefined && faceMesh.morphTargetInfluences != null) {
-      faceMesh.morphTargetInfluences[blinkRightIndex] = (leftEyeSlider?.value ?? 0) - 0.5 * Math.max(-1, Math.min(1, 2 * (directionalPad?.pitch ?? 0))) * (1 - (leftEyeSlider?.value ?? 0));
-    }
-    const browRightIndex = faceMesh.morphTargetDictionary?.["BrowsUp_Right"];
-    if (browRightIndex !== undefined && faceMesh.morphTargetInfluences != null) {
-      faceMesh.morphTargetInfluences[browRightIndex] = Math.max(0, Math.min(1, 2 * (directionalPad?.pitch ?? 0)));
-    }
-    const browLeftIndex = faceMesh.morphTargetDictionary?.["BrowsUp_Left"];
-    if (browLeftIndex !== undefined && faceMesh.morphTargetInfluences != null) {
-      faceMesh.morphTargetInfluences[browLeftIndex] = Math.max(0, Math.min(1, 2 * (directionalPad?.pitch ?? 0)));
-    }
-    const mouthIndex = faceMesh.morphTargetDictionary?.["MouthOpen"];
-    if (mouthIndex !== undefined && faceMesh.morphTargetInfluences != null) {
-      faceMesh.morphTargetInfluences[mouthIndex] = mouthSlider?.value ?? 0;
-    }
-  }
-
-  if (headBone) {
-    headBone.rotation.order = "YXZ";
-    headBone.rotation.x = 0.5 * (directionalPad?.pitch ?? 0);
-    headBone.rotation.y = 0.5 * (directionalPad?.yaw ?? 0);
-  }
-  if (neckBone) {
-    neckBone.rotation.order = "YXZ";
-    neckBone.rotation.x = 0.5 * (directionalPad?.pitch ?? 0);
-    neckBone.rotation.y = 0.5 * (directionalPad?.yaw ?? 0);
-  }
-  if (leftEyeBone) {
-    leftEyeBone.rotation.order = "YXZ";
-    leftEyeBone.rotation.x = -0.5 * (directionalPad?.pitch ?? 0);
-    leftEyeBone.rotation.y = -0.5 * (directionalPad?.yaw ?? 0);
-  }
-  if (rightEyeBone) {
-    rightEyeBone.rotation.order = "YXZ";
-    rightEyeBone.rotation.x = -0.5 * (directionalPad?.pitch ?? 0);
-    rightEyeBone.rotation.y = -0.5 * (directionalPad?.yaw ?? 0);
-  }
-
-  reconstructedController?.setControls(
-    directionalPad?.yaw ?? 0,
-    directionalPad?.pitch ?? 0,
-    mouthSlider?.value ?? 0.5,
-    leftEyeSlider?.value ?? 0.5,
-    rightEyeSlider?.value ?? 0.5
-  );
-
-  if (doRender) renderFrame();
-}
+export function initThree(){scene=new three.Scene();camera=new three.PerspectiveCamera(60,window.innerWidth/window.innerHeight,.1,1000);camera.position.set(0,-.01,.5);canvasHolder=(document.getElementById("canvas-holder")??(()=>{throw new Error("cannot get canvas holder");})()) as HTMLDivElement;canvas=(document.getElementById("canvas")??(()=>{throw new Error("cannot get canvas");})()) as HTMLCanvasElement;renderer=new three.WebGLRenderer({antialias:true,canvas,alpha:true});renderer.setClearColor(0,0);const resizeObserver=new ResizeObserver(()=>resizeCanvas(true));resizeObserver.observe(canvasHolder);loadScene();resizeCanvas();}
+export function resizeCanvas(doRender=true){if(camera==null||canvasHolder==null||renderer==null||scene==null)return;const width=canvasHolder.clientWidth,height=canvasHolder.clientHeight;camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false);renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));if(doRender)renderFrame();}
+export function loadScene(){if(camera==null||canvasHolder==null||renderer==null||scene==null)throw new Error("cannot load scene without loaded values");const light1=new three.DirectionalLight(0xffffff,2);light1.position.set(2,2,3);scene.add(light1);const light2=new three.DirectionalLight(0xffffff,1);light2.position.set(-1,3,0);scene.add(light2);const light3=new three.DirectionalLight(0xffffff,.5);light3.position.set(-1,0,3);scene.add(light3);cube=new three.Mesh(new three.BoxGeometry(),new three.MeshStandardMaterial({color:0xff0000}));const loader=new GLTFLoader();const modelUrl=`${import.meta.env.BASE_URL}assets/model.glb`;loader.load(modelUrl,(gltf)=>{modelRoot=gltf.scene;scene!.add(gltf.scene);gltf.scene.traverse(obj=>{if((obj as any).isMesh){const asMesh=obj as three.Mesh;if(!asMesh.morphTargetDictionary)return;faceMesh=asMesh;}else if((obj as any).isBone){const asBone=obj as three.Bone;if(obj.name==="mixamorig_Neck")neckBone=asBone;if(obj.name==="mixamorig_Head")headBone=asBone;if(obj.name==="mixamorig_LeftEye")leftEyeBone=asBone;if(obj.name==="mixamorig_RightEye")rightEyeBone=asBone;if(obj.name==="mixamorig_LeftArm")asBone.rotateX(1);if(obj.name==="mixamorig_RightArm")asBone.rotateX(1);}});updateModel();});}
+export async function setImageFace(image:HTMLImageElement,bbox?:[number,number,number,number],onProgress?:(progress:FaceBuildProgress)=>void,signal?:AbortSignal){if(!scene||!camera||!renderer||!canvasHolder||!image.complete||image.naturalWidth===0)return false;if(modelRoot)modelRoot.visible=false;clearReconstructedFace();const controller=await createFaceVerseMesh(image,bbox,onProgress,signal);if(signal?.aborted)throw new DOMException('Reconstruction cancelled','AbortError');reconstructedController=controller;reconstructedFace=controller.mesh;scene.add(reconstructedFace);updateModel();return true;}
+function clearReconstructedFace(){if(!scene||!reconstructedFace){reconstructedController=null;return;}scene.remove(reconstructedFace);reconstructedFace.geometry.dispose();if(reconstructedFace.material instanceof three.Material)reconstructedFace.material.dispose();reconstructedFace=null;reconstructedController=null;}
+export function clearImageFace(){clearReconstructedFace();if(modelRoot)modelRoot.visible=true;renderFrame();}
+function renderFrame(){if(camera==null||canvasHolder==null||renderer==null||scene==null)return;renderer.render(scene,camera);}
+export function updateModel(doRender=true){if(camera==null||canvasHolder==null||renderer==null||scene==null)return;if(faceMesh){const blinkLeftIndex=faceMesh.morphTargetDictionary?.["Blink_Left"];if(blinkLeftIndex!==undefined&&faceMesh.morphTargetInfluences!=null)faceMesh.morphTargetInfluences[blinkLeftIndex]=(rightEyeSlider?.value??0)-.5*Math.max(-1,Math.min(1,2*(directionalPad?.pitch??0)))*(1-(rightEyeSlider?.value??0));const blinkRightIndex=faceMesh.morphTargetDictionary?.["Blink_Right"];if(blinkRightIndex!==undefined&&faceMesh.morphTargetInfluences!=null)faceMesh.morphTargetInfluences[blinkRightIndex]=(leftEyeSlider?.value??0)-.5*Math.max(-1,Math.min(1,2*(directionalPad?.pitch??0)))*(1-(leftEyeSlider?.value??0));const browRightIndex=faceMesh.morphTargetDictionary?.["BrowsUp_Right"];if(browRightIndex!==undefined&&faceMesh.morphTargetInfluences!=null)faceMesh.morphTargetInfluences[browRightIndex]=Math.max(0,Math.min(1,2*(directionalPad?.pitch??0)));const browLeftIndex=faceMesh.morphTargetDictionary?.["BrowsUp_Left"];if(browLeftIndex!==undefined&&faceMesh.morphTargetInfluences!=null)faceMesh.morphTargetInfluences[browLeftIndex]=Math.max(0,Math.min(1,2*(directionalPad?.pitch??0)));const mouthIndex=faceMesh.morphTargetDictionary?.["MouthOpen"];if(mouthIndex!==undefined&&faceMesh.morphTargetInfluences!=null)faceMesh.morphTargetInfluences[mouthIndex]=mouthSlider?.value??0;}
+if(headBone){headBone.rotation.order="YXZ";headBone.rotation.x=.5*(directionalPad?.pitch??0);headBone.rotation.y=.5*(directionalPad?.yaw??0);}if(neckBone){neckBone.rotation.order="YXZ";neckBone.rotation.x=.5*(directionalPad?.pitch??0);neckBone.rotation.y=.5*(directionalPad?.yaw??0);}if(leftEyeBone){leftEyeBone.rotation.order="YXZ";leftEyeBone.rotation.x=-.5*(directionalPad?.pitch??0);leftEyeBone.rotation.y=-.5*(directionalPad?.yaw??0);}if(rightEyeBone){rightEyeBone.rotation.order="YXZ";rightEyeBone.rotation.x=-.5*(directionalPad?.pitch??0);rightEyeBone.rotation.y=-.5*(directionalPad?.yaw??0);}reconstructedController?.setControls(directionalPad?.yaw??0,directionalPad?.pitch??0,mouthSlider?.value??.5,leftEyeSlider?.value??.5,rightEyeSlider?.value??.5);if(doRender)renderFrame();}
