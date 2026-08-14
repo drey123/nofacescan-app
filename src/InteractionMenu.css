@@ -7,16 +7,14 @@
   inset: auto 0 0 50%;
   transform: translateX(-50%);
   box-shadow: rgba(0, 0, 0, 0.1) 0 0 3rem 0;
-  
   display: grid;
   grid-template-columns: auto 1fr;
   padding: 0.75rem;
   height: calc(var(--dpad-size) + 1.5rem);
-  
   display: flex;
   flex-direction: column;
-
   border-radius: 1.75rem 1.75rem 0 0;
+  z-index: 45;
   @supports (corner-shape: squircle) {
     border-radius: 3rem 3rem 0 0;
     corner-shape: squircle;
@@ -45,20 +43,20 @@
 #interaction-menu > .main-row > .sliders {
   --split-animation-progress: 0;
   transition: --split-animation-progress 500ms cubic-bezier(.39,1.35,.3,1);
-
   --padding: 0.75rem;
   --slider-count: calc(2 + var(--split-animation-progress));
   --column-width: 100%;
   position: relative;
   --thumb-height: 2.5rem;
-  --thumb-padding: 0.25rem; 
+  --thumb-padding: 0.25rem;
   --button-height: 2rem;
-
   isolation: isolate;
 }
+
 #interaction-menu > .main-row > .sliders[data-is-split="true"] {
   --split-animation-progress: 1;
 }
+
 @property --split-animation-progress {
   syntax: '<number>';
   initial-value: 0;
@@ -66,27 +64,26 @@
   animatable: true;
 }
 
-
 #interaction-menu > .main-row > .sliders > .slider {
   --value: 0;
   --slider-index: 0;
   --slider-column-count: 1;
   width: calc((100% + var(--padding)) / var(--slider-count) * var(--slider-column-count) - var(--padding));
   left: calc((100% + var(--padding)) / var(--slider-count) * var(--slider-index));
-
   position: absolute;
   height: 100%;
 }
-
 
 #left-eye-slider {
   --slider-index: 0 !important;
   height: calc(100% - var(--button-height) - var(--padding)) !important;
 }
+
 #right-eye-slider {
   --slider-index: var(--split-animation-progress) !important;
   height: calc(100% - var(--button-height) - var(--padding)) !important;
 }
+
 #mouth-slider {
   --slider-index: calc(1 + var(--split-animation-progress)) !important;
 }
@@ -103,7 +100,6 @@
   border-radius: 0.625rem;
   box-shadow: inset rgba(0, 0, 0, 0.05) 0 0 2rem;
   transition: transform 200ms ease;
-
   @supports (corner-shape: squircle) {
     border-radius: 1rem;
     corner-shape: squircle;
@@ -113,7 +109,6 @@
 #interaction-menu > .main-row > .sliders > .split-button:active {
   transform: scale(0.9);
 }
-
 
 #interaction-menu > .main-row > .sliders > .split-button > .active-text,
 #interaction-menu > .main-row > .sliders > .split-button > .inactive-text {
@@ -128,20 +123,17 @@
   opacity: calc(1 - var(--split-animation-progress));
   transform: scale(calc(1 - var(--split-animation-progress) * 0.5));
 }
+
 #interaction-menu > .main-row > .sliders > .split-button > .active-text {
   opacity: var(--split-animation-progress);
   transform: scale(calc(var(--split-animation-progress) * 0.5 + 0.5));
 }
-
-
-
 
 #interaction-menu > .main-row > .sliders > .slider > .track {
   position: absolute;
   inset: 0rem;
   pointer-events: none;
   z-index: 1;
-
   background: var(--bg-1);
   border-radius: 1rem;
   box-shadow: inset rgba(0, 0, 0, 0.05) 0 0 2rem;
@@ -150,10 +142,10 @@
     corner-shape: squircle;
   };
 }
+
 #interaction-menu > .main-row > .sliders > .slider > .thumb {
   position: absolute;
   z-index: 3;
-  
   inset: 0;
   top: calc((100% - var(--thumb-height) - 2 * var(--thumb-padding)) * var(--value));
   height: var(--thumb-height);
@@ -161,7 +153,7 @@
   pointer-events: none;
   background: var(--bg-0);
   border-radius: 0.75rem;
-  d-box-shadow: rgba(0, 0, 0, 0.2) 0 0 1rem 0;
+  box-shadow: rgba(0, 0, 0, 0.2) 0 0 1rem 0;
   @supports (corner-shape: squircle) {
     border-radius: 1rem;
     corner-shape: squircle;
@@ -171,7 +163,6 @@
 #interaction-menu > .main-row > .sliders > .slider > .thumb-shadow {
   position: absolute;
   z-index: 2;
-  
   inset: 0;
   top: calc((100% - var(--thumb-height) - 2 * var(--thumb-padding)) * var(--value));
   height: var(--thumb-height);
@@ -184,6 +175,7 @@
     corner-shape: squircle;
   };
 }
+
 #left-eye-slider > .thumb-shadow,
 #right-eye-slider > .thumb-shadow {
   opacity: calc(0.5 + 0.5 * var(--split-animation-progress)) !important;
@@ -197,7 +189,6 @@
   transform: translate(-50%, -50%);
   opacity: 0.6;
 }
-
 
 #interaction-menu > .main-row > .sliders > .slider > input {
   position: absolute;
@@ -223,7 +214,6 @@
   background: none;
   cursor: pointer;
 }
-
 
 #interaction-menu > .main-row > .sliders > .slider > input::-moz-range-thumb {
   -moz-appearance: none;
