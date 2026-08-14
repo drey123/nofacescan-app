@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/nofacescan-app/',
+  // GitHub Pages may serve the site from a repository subpath.
+  // Relative asset URLs keep the build portable across Pages and local hosting.
+  base: './',
 });
