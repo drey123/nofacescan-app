@@ -60,15 +60,11 @@ function initNavigation() {
 
   const copyTransform = (value: ImageTransform): ImageTransform => ({ ...value });
 
-  // One source state controls every source-specific UI element.
-  // 3D: exactly one menu action. Image: exactly two menu actions.
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
-
     canvas.style.visibility = usingImage ? 'hidden' : 'visible';
     imageBackground.hidden = !usingImage;
     imagePreview.hidden = !usingImage;
-
     imageUploadMenuItem.hidden = usingImage;
     threeModelMenuItem.hidden = !usingImage;
     adjustImageMenuItem.hidden = !usingImage;
@@ -96,6 +92,7 @@ function initNavigation() {
       setMenuOpen(false);
       interactionMenu.hidden = true;
       navbar.classList.add('editor-active');
+      menuButton.setAttribute('aria-label', 'Cancel image adjustment');
       imageEditor.hidden = false;
       applyImageTransform();
       return;
@@ -104,6 +101,8 @@ function initNavigation() {
     imageEditor.hidden = true;
     interactionMenu.hidden = false;
     navbar.classList.remove('editor-active');
+    menuButton.setAttribute('aria-label', 'Open menu');
+    menuButton.setAttribute('aria-expanded', 'false');
     editorSnapshot = null;
   };
 
@@ -112,7 +111,6 @@ function initNavigation() {
       setEditorOpen(false);
       return;
     }
-
     transform = copyTransform(editorSnapshot.transform);
     setSource(editorSnapshot.source);
     applyImageTransform();
@@ -128,19 +126,16 @@ function initNavigation() {
         imageEditorHint.textContent = 'No face detected — position it manually';
         return;
       }
-
       const detection = [...detections].sort((a, b) => (b.categories[0]?.score ?? 0) - (a.categories[0]?.score ?? 0))[0];
       if (!detection) {
         imageEditorHint.textContent = 'No face detected — position it manually';
         return;
       }
-
       const box = detection.boundingBox;
       if (!box) {
         imageEditorHint.textContent = 'Face location unavailable — position it manually';
         return;
       }
-
       const width = imagePreview.clientWidth;
       const height = imagePreview.clientHeight;
       const naturalWidth = imagePreview.naturalWidth;
@@ -153,12 +148,10 @@ function initNavigation() {
       const faceX = baseLeft + (box.originX + box.width / 2) * coverScale;
       const faceY = baseTop + (box.originY + box.height / 2) * coverScale;
       const faceHeight = box.height * coverScale;
-
       const targetFaceHeight = Math.min(height * 0.38, width * 0.68);
       const targetX = width / 2;
       const targetY = height * 0.40;
       const scale = Math.min(2.5, Math.max(0.65, targetFaceHeight / faceHeight));
-
       transform.scale = scale;
       transform.x = targetX - (width / 2 + (faceX - width / 2) * scale);
       transform.y = targetY - (height / 2 + (faceY - height / 2) * scale);
@@ -173,12 +166,10 @@ function initNavigation() {
   menuButton.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-
     if (!imageEditor.hidden) {
       cancelEditor();
       return;
     }
-
     setMenuOpen(menu.hidden);
   });
 
@@ -204,9 +195,7 @@ function initNavigation() {
   imageUpload.addEventListener('change', () => {
     const file = imageUpload.files?.[0];
     if (!file || !file.type.startsWith('image/')) return;
-
     const previousState: EditorSnapshot = { source: activeSource, transform: copyTransform(transform) };
-
     if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl);
     imageObjectUrl = URL.createObjectURL(file);
     imagePreview.src = imageObjectUrl;
@@ -214,7 +203,6 @@ function initNavigation() {
     transform = { x: 0, y: 0, scale: 1 };
     setSource('image');
     imageEditorHint.textContent = 'Finding face…';
-
     requestAnimationFrame(() => {
       setEditorOpen(true, previousState);
       void autoFitToFace();
