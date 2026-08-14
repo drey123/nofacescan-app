@@ -88,7 +88,16 @@ function initNavigation() {
       }
 
       const detection = [...detections].sort((a, b) => (b.categories[0]?.score ?? 0) - (a.categories[0]?.score ?? 0))[0];
+      if (!detection) {
+        imageEditorHint.textContent = 'No face detected — position it manually';
+        return;
+      }
       const box = detection.boundingBox;
+      if (!box) {
+        imageEditorHint.textContent = 'Face location unavailable — position it manually';
+        return;
+      }
+
       const width = imagePreview.clientWidth;
       const height = imagePreview.clientHeight;
       const naturalWidth = imagePreview.naturalWidth;
@@ -102,8 +111,6 @@ function initNavigation() {
       const faceY = baseTop + (box.originY + box.height / 2) * coverScale;
       const faceHeight = box.height * coverScale;
 
-      // This is the first calibration pass. The editor guide is deliberately
-      // the same visual reference used for manual correction.
       const targetFaceHeight = Math.min(height * 0.38, width * 0.68);
       const targetX = width / 2;
       const targetY = height * 0.43;
