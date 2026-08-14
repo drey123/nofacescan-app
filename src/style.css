@@ -11,13 +11,11 @@
   --bg-2: #E4E4E6;
 }
 
-/*pc*/
 @media (min-aspect-ratio: 1/1) {
   .container {
     font-size: calc(16 * min(var(--fixed-vh) * 100 / 1080, var(--fixed-vw) * 100 / 1300));
   }
 }
-
 
 *, *:before, *:after {
   -webkit-box-sizing: border-box;
@@ -41,17 +39,13 @@ body {
   width: 100%;
   height: 100%;
 }
+
 #canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
-
-
-
-
-
 
 #navbar {
   --dpad-size: 10rem;
@@ -62,15 +56,12 @@ body {
   inset: 0 0 auto 50%;
   transform: translateX(-50%);
   box-shadow: rgba(0, 0, 0, 0.1) 0 0 3rem 0;
-  
-  display: grid;
-  grid-template-columns: auto 1fr;
   padding: 0.75rem;
   height: 3.25rem;
-  
   display: flex;
-  flex-direction: column;
-
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
   border-radius: 0 0 1.75rem 1.75rem;
   @supports (corner-shape: squircle) {
     border-radius: 0 0 3rem 3rem;
@@ -78,10 +69,90 @@ body {
   };
 }
 
-#navbar > img {
-  height: 2.25rem;
-  position: absolute;
-  inset: 50% 0 0 50%;
-  transform: translate(-50%, -50%);
+#brand {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  color: #202024;
+  line-height: 1;
   pointer-events: none;
+}
+
+#menu-button {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: var(--bg-1);
+  color: #3d3d42;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#menu-button svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+#menu-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+#app-menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0.55rem;
+  min-width: 11rem;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: rgba(0, 0, 0, 0.14) 0 0.7rem 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 1rem;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+#app-menu[hidden] {
+  display: none;
+}
+
+#image-upload-menu-item {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 0;
+  border-radius: 0.72rem;
+  background: transparent;
+  color: #242428;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#image-upload-menu-item svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+
+#image-upload-menu-item:active {
+  background: var(--bg-1);
+}
+
+#navbar > img {
+  display: none;
 }
