@@ -215,7 +215,7 @@ body {
 .face-guide {
   position: absolute;
   left: 50%;
-  top: 43%;
+  top: 40%;
   width: min(62vw, 22rem);
   height: min(74vw, 27rem);
   max-height: 58vh;
@@ -228,7 +228,7 @@ body {
 
 .image-editor-hint {
   position: absolute;
-  top: calc(43% + min(37vw, 13.5rem) + 0.8rem);
+  top: calc(40% + min(37vw, 13.5rem) + 0.8rem);
   left: 50%;
   transform: translateX(-50%);
   padding: 0.45rem 0.75rem;
@@ -257,38 +257,4 @@ body {
   border-radius: 1.1rem;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-}
-
-#image-reset-button,
-#image-done-button {
-  height: 2.45rem;
-  padding: 0 0.8rem;
-  border: 0;
-  border-radius: 0.8rem;
-  background: var(--bg-1);
-  color: #242428;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-#image-done-button {
-  background: #202024;
-  color: #fff;
-}
-
-.zoom-control {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0.5rem;
-  color: #4a4a50;
-  font-size: 0.68rem;
-  font-weight: 500;
-}
-
-.zoom-control input {
-  width: 100%;
-  min-width: 0;
 }
