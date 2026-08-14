@@ -25,6 +25,7 @@ async function getFaceDetector() {
 }
 
 function initNavigation() {
+  const navbar = document.getElementById('navbar') as HTMLDivElement | null;
   const menuButton = document.getElementById('menu-button') as HTMLButtonElement | null;
   const menu = document.getElementById('app-menu') as HTMLDivElement | null;
   const imageUpload = document.getElementById('image-upload') as HTMLInputElement | null;
@@ -32,6 +33,7 @@ function initNavigation() {
   const threeModelMenuItem = document.getElementById('three-model-menu-item') as HTMLButtonElement | null;
   const adjustImageMenuItem = document.getElementById('adjust-image-menu-item') as HTMLButtonElement | null;
   const canvas = document.getElementById('canvas') as HTMLCanvasElement | null;
+  const imageBackground = document.getElementById('image-background') as HTMLImageElement | null;
   const imagePreview = document.getElementById('image-preview') as HTMLImageElement | null;
   const imageEditor = document.getElementById('image-editor') as HTMLDivElement | null;
   const imageZoom = document.getElementById('image-zoom') as HTMLInputElement | null;
@@ -40,7 +42,7 @@ function initNavigation() {
   const imageEditorFrame = document.getElementById('image-editor-frame') as HTMLDivElement | null;
   const imageEditorHint = document.getElementById('image-editor-hint') as HTMLDivElement | null;
 
-  if (!menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
+  if (!navbar || !menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imageBackground || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
 
   let imageObjectUrl: string | null = null;
   let activeSource: FaceSource = '3d';
@@ -52,9 +54,12 @@ function initNavigation() {
     menuButton.setAttribute('aria-expanded', String(open));
   };
 
+  // One source state controls every source-specific UI element.
+  // 3D: exactly one menu action. Image: exactly two menu actions.
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
     canvas.hidden = usingImage;
+    imageBackground.hidden = !usingImage;
     imagePreview.hidden = !usingImage;
     imageUploadMenuItem.hidden = usingImage;
     threeModelMenuItem.hidden = !usingImage;
@@ -78,6 +83,7 @@ function initNavigation() {
 
   const setEditorOpen = (open: boolean) => {
     imageEditor.hidden = !open;
+    navbar.classList.toggle('editor-active', open);
     if (open) {
       setMenuOpen(false);
       applyImageTransform();
@@ -140,8 +146,6 @@ function initNavigation() {
     setMenuOpen(menu.hidden);
   });
 
-  // Keep menu interactions inside the menu so the outside-click handler cannot
-  // interfere with touch/click activation on mobile browsers.
   menu.addEventListener('click', (event) => event.stopPropagation());
 
   imageUploadMenuItem.addEventListener('click', (event) => {
@@ -168,6 +172,7 @@ function initNavigation() {
     if (imageObjectUrl) URL.revokeObjectURL(imageObjectUrl);
     imageObjectUrl = URL.createObjectURL(file);
     imagePreview.src = imageObjectUrl;
+    imageBackground.src = imageObjectUrl;
     resetImageTransform();
     setSource('image');
     imageEditorHint.textContent = 'Finding face…';
