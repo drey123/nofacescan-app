@@ -91,8 +91,10 @@ function initNavigation() {
       editorResetTransform = copyTransform(transform);
       setMenuOpen(false);
       interactionMenu.hidden = true;
+      interactionMenu.setAttribute('aria-hidden', 'true');
       navbar.classList.add('editor-active');
       menuButton.setAttribute('aria-label', 'Cancel image adjustment');
+      menuButton.setAttribute('aria-expanded', 'false');
       imageEditor.hidden = false;
       applyImageTransform();
       return;
@@ -100,10 +102,12 @@ function initNavigation() {
 
     imageEditor.hidden = true;
     interactionMenu.hidden = false;
+    interactionMenu.removeAttribute('aria-hidden');
     navbar.classList.remove('editor-active');
     menuButton.setAttribute('aria-label', 'Open menu');
     menuButton.setAttribute('aria-expanded', 'false');
     editorSnapshot = null;
+    dragStart = null;
   };
 
   const cancelEditor = () => {
@@ -230,12 +234,14 @@ function initNavigation() {
 
   imageEditorFrame.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.preventDefault();
     imageEditorFrame.setPointerCapture(event.pointerId);
     dragStart = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, startX: transform.x, startY: transform.y };
   });
 
   imageEditorFrame.addEventListener('pointermove', (event) => {
     if (!dragStart || dragStart.pointerId !== event.pointerId) return;
+    event.preventDefault();
     transform.x = dragStart.startX + event.clientX - dragStart.x;
     transform.y = dragStart.startY + event.clientY - dragStart.y;
     applyImageTransform();
@@ -258,4 +264,3 @@ function initNavigation() {
 initNavigation();
 initInputs();
 initThree();
-initScaling();
