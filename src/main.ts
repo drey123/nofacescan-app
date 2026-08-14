@@ -4,7 +4,7 @@ import './InteractionMenu.css';
 import { FaceDetector, FilesetResolver } from '@mediapipe/tasks-vision';
 import { initInputs } from './Interface/InteractionMenu';
 import { initScaling } from './scaling';
-import { initThree } from './three/threeLoader';
+import { clearImageFace, initThree, setImageFace } from './three/threeLoader';
 
 type ImageTransform = { x: number; y: number; scale: number };
 type FaceSource = '3d' | 'image';
@@ -48,6 +48,7 @@ function initNavigation() {
 
   let imageObjectUrl: string | null = null;
   let activeSource: FaceSource = '3d';
+  let imageRendered = false;
   let transform: ImageTransform = { x: 0, y: 0, scale: 1 };
   let dragStart: { pointerId: number; x: number; y: number; startX: number; startY: number } | null = null;
   let editorSnapshot: EditorSnapshot | null = null;
@@ -62,9 +63,10 @@ function initNavigation() {
 
   const updateModeUI = () => {
     const usingImage = activeSource === 'image';
-    canvas.style.visibility = usingImage ? 'hidden' : 'visible';
-    imageBackground.hidden = !usingImage;
-    imagePreview.hidden = !usingImage;
+    const showRenderedImage = usingImage && imageRendered;
+    canvas.style.visibility = showRenderedImage || !usingImage ? 'visible' : 'hidden';
+    imageBackground.hidden = !usingImage || imageRendered;
+    imagePreview.hidden = !usingImage || imageRendered;
     imageUploadMenuItem.hidden = usingImage;
     threeModelMenuItem.hidden = !usingImage;
     adjustImageMenuItem.hidden = !usingImage;
@@ -72,6 +74,10 @@ function initNavigation() {
 
   const setSource = (source: FaceSource) => {
     activeSource = source;
+    if (source === '3d') {
+      imageRendered = false;
+      clearImageFace();
+    }
     updateModeUI();
   };
 
@@ -205,6 +211,7 @@ function initNavigation() {
     imagePreview.src = imageObjectUrl;
     imageBackground.src = imageObjectUrl;
     transform = { x: 0, y: 0, scale: 1 };
+    imageRendered = false;
     setSource('image');
     imageEditorHint.textContent = 'Finding face…';
     requestAnimationFrame(() => {
@@ -229,7 +236,15 @@ function initNavigation() {
 
   imageDoneButton.addEventListener('click', (event) => {
     event.preventDefault();
+    imageEditorHint.textContent = 'Building face…';
+    const built = setImageFace(imagePreview);
+    if (!built) {
+      imageEditorHint.textContent = 'Could not build face — try the image again';
+      return;
+    }
+    imageRendered = true;
     setEditorOpen(false);
+    updateModeUI();
   });
 
   imageEditorFrame.addEventListener('pointerdown', (event) => {
@@ -263,4 +278,5 @@ function initNavigation() {
 
 initNavigation();
 initInputs();
+initScaling();
 initThree();
