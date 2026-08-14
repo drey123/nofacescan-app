@@ -4,17 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NoFaceScan</title>
-    <meta name="description" content="Easily trick face scans without showing your face">
+    <title>Scanny</title>
+    <meta name="description" content="A simple face control interface">
   </head>
   <body>
     <div id="app">
-      <div id="navbar">
-        <img src="logo.png" alt="">
-        <label id="image-upload-button" title="Use your own image">
-          <span>Upload image</span>
-          <input id="image-upload" type="file" accept="image/*" hidden>
-        </label>
+      <div id="navbar" aria-label="Scanny navigation">
+        <div id="brand">Scanny</div>
+        <button id="menu-button" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+        </button>
+        <div id="app-menu" hidden>
+          <button id="image-upload-menu-item" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.2" cy="9" r="1.4" fill="currentColor"/><path d="m6.5 17 4.1-4.3 2.8 2.7 1.9-2 2.2 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Use an image</span>
+          </button>
+        </div>
+        <input id="image-upload" type="file" accept="image/*" hidden>
       </div>
       <div id="canvas-holder">
         <canvas id="canvas"></canvas>
@@ -30,25 +36,19 @@
           <div class="sliders" data-is-split="false">
             <div id="left-eye-slider" class="slider">
               <div class="track"></div>
-              <div class="thumb">
-                <img src="icons/eye.svg" alt="" class="icon">
-              </div>
+              <div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div>
               <div class="thumb-shadow"></div>
               <input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="right-eye-slider" class="slider">
               <div class="track"></div>
-              <div class="thumb">
-                <img src="icons/eye.svg" alt="" class="icon">
-              </div>
+              <div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div>
               <div class="thumb-shadow"></div>
               <input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="mouth-slider" class="slider" style="--slider-index: 2;">
               <div class="track"></div>
-              <div class="thumb">
-                <img src="icons/mouth.svg" alt="" class="icon">
-              </div>
+              <div class="thumb"><img src="icons/mouth.svg" alt="" class="icon"></div>
               <div class="thumb-shadow"></div>
               <input type="range" min="0" max="1" step="0.001">
             </div>
