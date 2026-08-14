@@ -7,6 +7,7 @@ import { initScaling } from './scaling';
 import { initThree } from './three/threeLoader';
 
 type ImageTransform = { x: number; y: number; scale: number };
+type FaceSource = '3d' | 'image';
 
 const FACE_DETECTOR_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
 const FACE_DETECTOR_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
@@ -42,12 +43,29 @@ function initNavigation() {
   if (!menuButton || !menu || !imageUpload || !imageUploadMenuItem || !threeModelMenuItem || !adjustImageMenuItem || !canvas || !imagePreview || !imageEditor || !imageZoom || !imageResetButton || !imageDoneButton || !imageEditorFrame || !imageEditorHint) return;
 
   let imageObjectUrl: string | null = null;
+  let activeSource: FaceSource = '3d';
   let transform: ImageTransform = { x: 0, y: 0, scale: 1 };
   let dragStart: { pointerId: number; x: number; y: number; startX: number; startY: number } | null = null;
 
   const setMenuOpen = (open: boolean) => {
     menu.hidden = !open;
     menuButton.setAttribute('aria-expanded', String(open));
+  };
+
+  // Keep menu availability derived from one source of truth. New actions can be
+  // added here later without scattering mode checks throughout the handlers.
+  const updateModeUI = () => {
+    const usingImage = activeSource === 'image';
+    canvas.hidden = usingImage;
+    imagePreview.hidden = !usingImage;
+    imageUploadMenuItem.hidden = usingImage;
+    threeModelMenuItem.hidden = !usingImage;
+    adjustImageMenuItem.hidden = !usingImage;
+  };
+
+  const setSource = (source: FaceSource) => {
+    activeSource = source;
+    updateModeUI();
   };
 
   const applyImageTransform = () => {
@@ -58,15 +76,6 @@ function initNavigation() {
   const resetImageTransform = () => {
     transform = { x: 0, y: 0, scale: 1 };
     applyImageTransform();
-  };
-
-  const setSource = (source: '3d' | 'image') => {
-    const usingImage = source === 'image';
-    canvas.hidden = usingImage;
-    imagePreview.hidden = !usingImage;
-    threeModelMenuItem.hidden = !usingImage;
-    adjustImageMenuItem.hidden = !usingImage;
-    imageUploadMenuItem.hidden = usingImage;
   };
 
   const setEditorOpen = (open: boolean) => {
@@ -92,6 +101,7 @@ function initNavigation() {
         imageEditorHint.textContent = 'No face detected — position it manually';
         return;
       }
+
       const box = detection.boundingBox;
       if (!box) {
         imageEditorHint.textContent = 'Face location unavailable — position it manually';
