@@ -40,11 +40,29 @@ body {
   height: 100%;
 }
 
-#canvas {
+#canvas,
+#image-preview {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+#canvas {
+  display: block;
+}
+
+#image-preview {
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+#canvas[hidden],
+#image-preview[hidden] {
+  display: none;
 }
 
 #navbar {
@@ -124,7 +142,8 @@ body {
   display: none;
 }
 
-#image-upload-menu-item {
+#image-upload-menu-item,
+#three-model-menu-item {
   width: 100%;
   min-height: 2.6rem;
   border: 0;
@@ -143,13 +162,15 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-#image-upload-menu-item svg {
+#image-upload-menu-item svg,
+#three-model-menu-item svg {
   width: 1.15rem;
   height: 1.15rem;
   flex: 0 0 auto;
 }
 
-#image-upload-menu-item:active {
+#image-upload-menu-item:active,
+#three-model-menu-item:active {
   background: var(--bg-1);
 }
 
