@@ -43,6 +43,10 @@
             <div id="reconstruction-detail">Starting…</div>
             <div class="reconstruction-progress"><div id="reconstruction-progress-bar"></div></div>
             <div id="reconstruction-metric">Waiting</div>
+            <div id="reconstruction-error-actions" hidden>
+              <button id="reconstruction-retry" type="button">Try again</button>
+              <button id="reconstruction-copy" type="button">Copy error</button>
+            </div>
           </div>
         </div>
       </div>
@@ -72,27 +76,15 @@
           </div>
           <div class="sliders" data-is-split="false">
             <div id="left-eye-slider" class="slider">
-              <div class="track"></div>
-              <div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div>
-              <div class="thumb-shadow"></div>
-              <input type="range" min="0" max="1" step="0.001">
+              <div class="track"></div><div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div><div class="thumb-shadow"></div><input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="right-eye-slider" class="slider">
-              <div class="track"></div>
-              <div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div>
-              <div class="thumb-shadow"></div>
-              <input type="range" min="0" max="1" step="0.001">
+              <div class="track"></div><div class="thumb"><img src="icons/eye.svg" alt="" class="icon"></div><div class="thumb-shadow"></div><input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="mouth-slider" class="slider" style="--slider-index: 2;">
-              <div class="track"></div>
-              <div class="thumb"><img src="icons/mouth.svg" alt="" class="icon"></div>
-              <div class="thumb-shadow"></div>
-              <input type="range" min="0" max="1" step="0.001">
+              <div class="track"></div><div class="thumb"><img src="icons/mouth.svg" alt="" class="icon"></div><div class="thumb-shadow"></div><input type="range" min="0" max="1" step="0.001">
             </div>
-            <div id="eye-slider-split-button" class="split-button">
-              <div class="active-text">Join</div>
-              <div class="inactive-text">Split</div>
-            </div>
+            <div id="eye-slider-split-button" class="split-button"><div class="active-text">Join</div><div class="inactive-text">Split</div></div>
           </div>
         </div>
       </div>
