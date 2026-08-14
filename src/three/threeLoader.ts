@@ -1,5 +1,6 @@
 import * as three from "three";
 import { directionalPad, leftEyeSlider, mouthSlider, rightEyeSlider } from "../Interface/InteractionMenu";
+import { createFaceVerseMesh, type FaceVerseController } from "../faceverse/FaceVerseLite";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
 
 export let scene: three.Scene|null = null;
@@ -15,8 +16,8 @@ export let leftEyeBone: three.Bone|null = null;
 export let rightEyeBone: three.Bone|null = null;
 
 let modelRoot: three.Object3D|null = null;
-let imageFace: three.Mesh|null = null;
-let imageFaceTexture: three.Texture|null = null;
+let reconstructedFace: three.Mesh|null = null;
+let reconstructedController: FaceVerseController|null = null;
 
 export function initThree() {
   scene = new three.Scene();
@@ -87,58 +88,34 @@ export function loadScene() {
   });
 }
 
-export function setImageFace(image: HTMLImageElement) {
+export async function setImageFace(image: HTMLImageElement, bbox?: [number, number, number, number]) {
   if (!scene || !camera || !renderer || !canvasHolder || !image.complete || image.naturalWidth === 0) return false;
 
   if (modelRoot) modelRoot.visible = false;
-  if (imageFace) scene.remove(imageFace);
-  imageFaceTexture?.dispose();
+  clearReconstructedFace();
 
-  imageFaceTexture = new three.Texture(image);
-  imageFaceTexture.needsUpdate = true;
-  imageFaceTexture.colorSpace = three.SRGBColorSpace;
-
-  const aspect = image.naturalWidth / image.naturalHeight;
-  const height = 0.46;
-  const width = height * aspect;
-  const geometry = new three.PlaneGeometry(width, height, 64, 64);
-  const positions = geometry.attributes.position as three.BufferAttribute;
-  const uvs = geometry.attributes.uv as three.BufferAttribute;
-
-  for (let i = 0; i < positions.count; i++) {
-    const u = uvs.getX(i);
-    const v = uvs.getY(i);
-    const dx = (u - 0.5) * 2;
-    const dy = (v - 0.5) * 2;
-    const radius = Math.sqrt(dx * dx + dy * dy);
-    const dome = Math.max(0, 1 - Math.min(1, radius)) ** 2;
-    positions.setZ(i, dome * 0.075);
-  }
-  positions.needsUpdate = true;
-  geometry.computeVertexNormals();
-
-  imageFace = new three.Mesh(geometry, new three.MeshStandardMaterial({
-    map: imageFaceTexture,
-    transparent: false,
-    roughness: 0.92,
-    metalness: 0
-  }));
-  imageFace.position.set(0, -0.01, 0.03);
-  scene.add(imageFace);
+  const controller = await createFaceVerseMesh(image, bbox);
+  reconstructedController = controller;
+  reconstructedFace = controller.mesh;
+  scene.add(reconstructedFace);
   updateModel();
   return true;
 }
 
-export function clearImageFace() {
-  if (!scene) return;
-  if (imageFace) {
-    scene.remove(imageFace);
-    imageFace.geometry.dispose();
-    if (imageFace.material instanceof three.Material) imageFace.material.dispose();
-    imageFace = null;
+function clearReconstructedFace() {
+  if (!scene || !reconstructedFace) {
+    reconstructedController = null;
+    return;
   }
-  imageFaceTexture?.dispose();
-  imageFaceTexture = null;
+  scene.remove(reconstructedFace);
+  reconstructedFace.geometry.dispose();
+  if (reconstructedFace.material instanceof three.Material) reconstructedFace.material.dispose();
+  reconstructedFace = null;
+  reconstructedController = null;
+}
+
+export function clearImageFace() {
+  clearReconstructedFace();
   if (modelRoot) modelRoot.visible = true;
   renderFrame();
 }
@@ -195,13 +172,13 @@ export function updateModel(doRender = true) {
     rightEyeBone.rotation.y = -0.5 * (directionalPad?.yaw ?? 0);
   }
 
-  if (imageFace) {
-    imageFace.rotation.order = "YXZ";
-    imageFace.rotation.x = 0.5 * (directionalPad?.pitch ?? 0);
-    imageFace.rotation.y = 0.5 * (directionalPad?.yaw ?? 0);
-    const zoom = 1 + 0.35 * Math.max(-1, Math.min(1, directionalPad?.pitch ?? 0));
-    imageFace.scale.setScalar(zoom);
-  }
+  reconstructedController?.setControls(
+    directionalPad?.yaw ?? 0,
+    directionalPad?.pitch ?? 0,
+    mouthSlider?.value ?? 0.5,
+    leftEyeSlider?.value ?? 0.5,
+    rightEyeSlider?.value ?? 0.5
+  );
 
   if (doRender) renderFrame();
 }
