@@ -87,11 +87,6 @@ export function loadScene() {
   });
 }
 
-/**
- * Experimental image mode: turn the edited portrait into a lightweight curved
- * face surface inside the existing Three.js renderer. This is deliberately a
- * cheap 2.5D test, not a claim of full 3D reconstruction.
- */
 export function setImageFace(image: HTMLImageElement) {
   if (!scene || !camera || !renderer || !canvasHolder || !image.complete || image.naturalWidth === 0) return false;
 
@@ -107,11 +102,9 @@ export function setImageFace(image: HTMLImageElement) {
   const height = 0.46;
   const width = height * aspect;
   const geometry = new three.PlaneGeometry(width, height, 64, 64);
-  const positions = geometry.attributes.position;
-  const uvs = geometry.attributes.uv;
+  const positions = geometry.attributes.position as three.BufferAttribute;
+  const uvs = geometry.attributes.uv as three.BufferAttribute;
 
-  // Give the portrait a shallow facial dome. The center projects forward and
-  // the cheeks/edges fall back. This creates the first testable 2.5D layer.
   for (let i = 0; i < positions.count; i++) {
     const u = uvs.getX(i);
     const v = uvs.getY(i);
