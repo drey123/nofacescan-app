@@ -16,9 +16,18 @@
           <svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
         </button>
         <div id="app-menu" hidden>
-          <button id="image-upload-menu-item" type="button"><span>Use an image</span></button>
-          <button id="three-model-menu-item" type="button" hidden><span>Use 3D model</span></button>
-          <button id="adjust-image-menu-item" type="button" hidden><span>Adjust image</span></button>
+          <button id="image-upload-menu-item" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.2" cy="9" r="1.4" fill="currentColor"/><path d="m6.5 17 4.1-4.3 2.8-2.7 1.9-2 2.2-2 1.9 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Use an image</span>
+          </button>
+          <button id="three-model-menu-item" type="button" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12.1V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            <span>Use 3D model</span>
+          </button>
+          <button id="adjust-image-menu-item" type="button" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span>Adjust image</span>
+          </button>
         </div>
         <input id="image-upload" type="file" accept="image/*" hidden>
       </div>
@@ -42,7 +51,10 @@
       </div>
       <div id="image-editor" hidden aria-label="Adjust image">
         <div class="image-editor-scrim"></div>
-        <div id="image-editor-frame"><div class="face-guide" aria-hidden="true"></div><div id="image-editor-hint" class="image-editor-hint">Position the face inside the guide</div></div>
+        <div id="image-editor-frame">
+          <div class="face-guide" aria-hidden="true"></div>
+          <div id="image-editor-hint" class="image-editor-hint">Position the face inside the guide</div>
+        </div>
         <div id="image-editor-controls">
           <label class="zoom-control" for="image-zoom"><span>Zoom</span><input id="image-zoom" type="range" min="0.65" max="2.5" step="0.01" value="1"></label>
           <button id="image-done-button" type="button">Done</button>
