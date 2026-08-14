@@ -2,18 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.png" />
+    <link rel="icon" href="favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NoFaceScan</title>
-    <link rel="stylesheet" href="src/style.css">
-    <link rel="stylesheet" href="src/DirectionalPad.css">
-    <link rel="stylesheet" href="src/InteractionMenu.css">
     <meta name="description" content="Easily trick face scans without showing your face">
   </head>
   <body>
     <div id="app">
       <div id="navbar">
-        <img src="/logo.png" alt="">
+        <img src="logo.png" alt="">
         <label id="image-upload-button" title="Use your own image">
           <span>Upload image</span>
           <input id="image-upload" type="file" accept="image/*" hidden>
@@ -34,26 +31,26 @@
             <div id="left-eye-slider" class="slider">
               <div class="track"></div>
               <div class="thumb">
-                <img src="/icons/eye.svg" alt="" class="icon">
+                <img src="icons/eye.svg" alt="" class="icon">
               </div>
               <div class="thumb-shadow"></div>
-              <input type="range" name="" min="0" max="1" step="0.001">
+              <input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="right-eye-slider" class="slider">
               <div class="track"></div>
               <div class="thumb">
-                <img src="/icons/eye.svg" alt="" class="icon">
+                <img src="icons/eye.svg" alt="" class="icon">
               </div>
               <div class="thumb-shadow"></div>
-              <input type="range" name="" min="0" max="1" step="0.001">
+              <input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="mouth-slider" class="slider" style="--slider-index: 2;">
               <div class="track"></div>
               <div class="thumb">
-                <img src="/icons/mouth.svg" alt="" class="icon">
+                <img src="icons/mouth.svg" alt="" class="icon">
               </div>
               <div class="thumb-shadow"></div>
-              <input type="range" name="" min="0" max="1" step="0.001">
+              <input type="range" min="0" max="1" step="0.001">
             </div>
             <div id="eye-slider-split-button" class="split-button">
               <div class="active-text">Join</div>
@@ -63,6 +60,6 @@
         </div>
       </div>
     </div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="src/main.ts"></script>
   </body>
 </html>
